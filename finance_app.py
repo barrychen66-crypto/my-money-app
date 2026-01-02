@@ -2,35 +2,38 @@ import streamlit as st
 import json
 import gspread
 from google.oauth2.service_account import Credentials
+import pandas as pd
+import plotly.express as px
+
 # --- 1. 設定區 ---
 # ⚠️ 請將下方網址換成您自己的 Google 試算表網址！
 SHEET_URL = "https://docs.google.com/spreadsheets/d/174jupio-yaY3ckuh6ca6I3UP0DAEn7ZFwI4ilNwm0FM/edit?gid=0#gid=0"
-KEY_FILE = "google_key.json"
 
 st.set_page_config(page_title="雲端記帳本", layout="centered", page_icon="☁️")
 
 # --- 2. 連線 Google Sheets 的核心功能 ---
 def connect_to_gsheet():
-# --- 設定權限範圍 ---
-scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+    # --- 設定權限範圍 ---
+    scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
-# --- 關鍵修改：從 Secrets 讀取憑證，而不是讀取檔案 ---
-# 1. 讀取 Secrets 裡的字串並轉為字典
-key_dict = json.loads(st.secrets["gcp_service_account"])
-
-# 2. 使用字典建立憑證
-creds = Credentials.from_service_account_info(key_dict, scopes=scope)
-
-# 3. 連線 Google Sheets
-client = gspread.authorize(creds)
-    # ★ 修改重點：使用 open_by_url (透過網址開啟) 避免找不到或開錯檔案
+    # --- 關鍵修改：從 Secrets 讀取憑證 ---
     try:
+        # 1. 讀取 Secrets 裡的字串並轉為字典
+        key_dict = json.loads(st.secrets["gcp_service_account"])
+        
+        # 2. 使用字典建立憑證
+        creds = Credentials.from_service_account_info(key_dict, scopes=scope)
+        
+        # 3. 連線 Google Sheets
+        client = gspread.authorize(creds)
+        
+        # 4. 開啟試算表
         sheet = client.open_by_url(SHEET_URL).sheet1
         return sheet
+        
     except Exception as e:
-        # 如果連線失敗，直接在網頁上顯示大大的錯誤，讓您知道原因
-        st.error(f"❌ 連線失敗！請檢查：\n1. 網址是否正確？\n2. 是否有將試算表「共用」給機器人？\n3. 錯誤訊息：{e}")
-        st.stop() # 停止程式執行
+        st.error(f"❌ 連線失敗！原因：{e}")
+        st.stop()
 
 def load_data():
     sheet = connect_to_gsheet()
@@ -47,13 +50,6 @@ def save_new_entry(date, item_type, category, amount, note):
     if len(sheet.get_all_values()) == 0:
         sheet.append_row(["日期", "類型", "類別", "金額", "備註"])
     sheet.append_row([date_str, item_type, category, amount, note])
-
-def update_data(dataframe):
-    sheet = connect_to_gsheet()
-    sheet.clear()
-    dataframe["日期"] = dataframe["日期"].dt.strftime("%Y-%m-%d")
-    data_to_write = [dataframe.columns.values.tolist()] + dataframe.values.tolist()
-    sheet.update(data_to_write)
 
 # --- 3. 介面設計 ---
 st.markdown("### ☁️ 我的雲端記帳本 (網址連線版)")
