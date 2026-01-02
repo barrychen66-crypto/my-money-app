@@ -1,9 +1,7 @@
 import streamlit as st
-import pandas as pd
+import json
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import plotly.express as px
-
+from google.oauth2.service_account import Credentials
 # --- 1. 設定區 ---
 # ⚠️ 請將下方網址換成您自己的 Google 試算表網址！
 SHEET_URL = "https://docs.google.com/spreadsheets/d/174jupio-yaY3ckuh6ca6I3UP0DAEn7ZFwI4ilNwm0FM/edit?gid=0#gid=0"
@@ -13,12 +11,18 @@ st.set_page_config(page_title="雲端記帳本", layout="centered", page_icon="�
 
 # --- 2. 連線 Google Sheets 的核心功能 ---
 def connect_to_gsheet():
-    # 設定權限範圍
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    # 使用您的鑰匙檔案連線
-    creds = ServiceAccountCredentials.from_json_keyfile_name(KEY_FILE, scope)
-    client = gspread.authorize(creds)
-    
+# --- 設定權限範圍 ---
+scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+
+# --- 關鍵修改：從 Secrets 讀取憑證，而不是讀取檔案 ---
+# 1. 讀取 Secrets 裡的字串並轉為字典
+key_dict = json.loads(st.secrets["gcp_service_account"])
+
+# 2. 使用字典建立憑證
+creds = Credentials.from_service_account_info(key_dict, scopes=scope)
+
+# 3. 連線 Google Sheets
+client = gspread.authorize(creds)
     # ★ 修改重點：使用 open_by_url (透過網址開啟) 避免找不到或開錯檔案
     try:
         sheet = client.open_by_url(SHEET_URL).sheet1
