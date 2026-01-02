@@ -18,15 +18,15 @@ def connect_to_gsheet():
 
     # --- 關鍵修改：從 Secrets 讀取憑證 ---
     try:
-        # 1. 讀取 Secrets 裡的字串並轉為字典
-        # 這裡會抓取您在 Streamlit 網頁上設定的 secrets
+        # 檢查 Secrets 是否存在
         if "gcp_service_account" not in st.secrets:
-            st.error("❌ 找不到 Secrets 設定！請檢查 Streamlit 的 Secrets 頁面。")
+            st.error("❌ 找不到 Secrets 設定！請檢查 Streamlit 的 Secrets 頁面是否已貼上設定。")
             st.stop()
             
+        # 1. 讀取 Secrets 裡的字串並轉為字典
         key_dict = json.loads(st.secrets["gcp_service_account"])
         
-        # 2. 使用字典建立憑證
+        # 2. 使用字典建立憑證 (注意：這裡是 from_service_account_info，絕對不能是 from_json_keyfile_name)
         creds = Credentials.from_service_account_info(key_dict, scopes=scope)
         
         # 3. 連線 Google Sheets
