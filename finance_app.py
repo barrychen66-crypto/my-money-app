@@ -10,76 +10,76 @@ import datetime
 # ⚠️ 請將下方網址換成您自己的 Google 試算表網址！
 SHEET_URL = "https://docs.google.com/spreadsheets/d/174jupio-yaY3ckuh6ca6I3UP0DAEn7ZFwI4ilNwm0FM/edit?gid=0#gid=0"
 
-st.set_page_config(page_title="雅緻記帳本", layout="centered", page_icon="🌹")
+st.set_page_config(page_title="雲端記帳簿", layout="centered", page_icon="☁️")
 
-# --- CSS 樣式注入：莫蘭迪乾燥玫瑰色系 (成熟穩重風格) ---
+# --- CSS 樣式注入：高對比、大字體、成熟風格 ---
 st.markdown("""
     <style>
-    /* 1. 背景：溫暖的米白色 (護眼、舒適) */
+    /* 1. 整體背景：暖奶油白 (護眼、對比高) */
     .stApp {
-        background-color: #FDFCF8;
+        background-color: #FFFDF5;
     }
     
-    /* 2. 標題：深褐灰色 (沈穩) */
-    h1, h2, h3, .stMarkdown h3 {
-        color: #5D4037 !important; 
-        font-family: "Microsoft JhengHei", sans-serif;
-        font-weight: 600 !important;
+    /* 2. 標題與文字全面放大，顏色加深 */
+    h1 {
+        color: #2c3e50 !important;
+        font-size: 3rem !important; /* 特大標題 */
+        font-weight: 800 !important;
+    }
+    h2, h3, .stMarkdown h3 {
+        color: #2c3e50 !important; 
+        font-size: 1.8rem !important;
+        font-weight: 700 !important;
+    }
+    p, .stMarkdown p {
+        font-size: 1.2rem !important;
+        color: #333333 !important;
     }
     
-    /* 3. 按鈕：乾燥玫瑰色 (典雅不刺眼) */
+    /* 3. 輸入框標籤 (日期、金額那些字) */
+    .stSelectbox label, .stDateInput label, .stNumberInput label, .stTextInput label, .stRadio label {
+        font-size: 1.5rem !important; /* 放大標籤 */
+        color: #000000 !important; /* 純黑字體，最高對比 */
+        font-weight: 700 !important;
+    }
+    
+    /* 4. 按鈕優化：酒紅色 (Burgundy) + 超大尺寸 */
     div.stButton > button {
-        background-color: #BC8F8F; /* RosyBrown */
+        background-color: #800020; /* 酒紅 */
         color: white;
-        border-radius: 8px;
-        height: 3.2em; 
-        font-size: 18px !important;
-        font-weight: 500;
-        border: none;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 10px;
+        height: 4em; /* 按鈕變高，好按 */
+        font-size: 22px !important; /* 按鈕字變大 */
+        font-weight: bold;
+        border: 2px solid #500015;
     }
     div.stButton > button:hover {
-        background-color: #A07070; /* Darker RosyBrown */
+        background-color: #A52A2A; /* 淺一點的紅 */
         color: white;
+        border-color: #800020;
     }
 
-    /* 4. 輸入框優化：暖灰色文字 */
-    .stSelectbox label, .stDateInput label, .stNumberInput label, .stTextInput label, .stRadio label {
-        font-size: 1.1rem !important;
-        color: #6D4C41 !important;
-        font-weight: 500;
-    }
-    
-    /* 5. 分頁籤樣式：香檳金配色 */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 5px;
-    }
+    /* 5. 分頁籤：加大、加深 */
     .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        background-color: #F5E6E0; /* 淺粉膚色 */
-        border-radius: 4px 4px 0px 0px;
-        color: #6D4C41;
-        font-size: 18px;
+        height: 60px;
+        background-color: #EFEFEF;
+        color: #333;
+        font-size: 20px; /* 分頁字體放大 */
+        font-weight: 600;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #BC8F8F !important; /* 乾燥玫瑰 */
+        background-color: #800020 !important;
         color: white !important;
     }
     
-    /* 6. 指標卡片：優雅邊框 */
-    div[data-testid="stMetric"] {
-        background-color: #FFFBF0;
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid #E6D5D0;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    /* 6. 指標數字放大 */
+    div[data-testid="stMetricValue"] {
+        font-size: 2rem !important;
+        color: #800020 !important;
     }
-    
-    /* 7. 表格優化 (確保資料管理顯示正常) */
-    [data-testid="stDataFrame"] {
-        background-color: white;
-        border-radius: 8px;
-        padding: 5px;
+    div[data-testid="stMetricLabel"] {
+        font-size: 1.2rem !important;
+        font-weight: bold;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -92,7 +92,7 @@ def connect_to_gsheet():
             st.error("❌ 找不到 Secrets 設定！")
             st.stop()
         
-        # 讀取 Secrets (strict=False)
+        # 讀取 Secrets
         key_dict = json.loads(st.secrets["gcp_service_account"], strict=False)
         creds = Credentials.from_service_account_info(key_dict, scopes=scope)
         client = gspread.authorize(creds)
@@ -126,22 +126,24 @@ def update_sheet_data(df):
     sheet.update(data_to_write)
 
 # --- 3. 介面設計 ---
-st.markdown("# 🌹 雅緻記帳本")
+st.markdown("# ☁️ 雲端記帳簿")
 
 # Tabs 分頁
-tab1, tab2, tab3 = st.tabs(["記一筆", "收支報表", "帳務管理"])
+tab1, tab2, tab3 = st.tabs(["大字記帳", "收支報表", "資料管理"])
 
 # ==========================
-# 分頁 1: 新增收支
+# 分頁 1: 新增收支 (大字版)
 # ==========================
 with tab1:
     with st.container(border=True):
-        st.markdown("### 📝 新增紀錄")
+        st.markdown("### 📝 新增一筆紀錄")
         
-        date_input = st.date_input("日期")
-        
-        # Radio 樣式
-        type_input = st.radio("類型", ["支出", "收入"], horizontal=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            date_input = st.date_input("日期")
+        with c2:
+            # Radio 樣式
+            type_input = st.radio("類型", ["支出", "收入"], horizontal=True)
         
         if type_input == "支出":
             cat_options = ["飲食", "交通", "購物", "娛樂", "居家", "醫療", "保險", "人情", "其他"]
@@ -150,27 +152,28 @@ with tab1:
             
         category_input = st.selectbox("分類", cat_options)
         
-        # 預設為空，方便輸入 (修復了這裡的語法錯誤)
-        amount_input = st.number_input("金額 (NT$)", min_value=0, step=1, value=None, placeholder="請輸入金額")
+        # 預設為空，方便輸入
+        amount_input = st.number_input("金額 (新台幣)", min_value=0, step=1, value=None, placeholder="點此輸入金額")
         
-        note_input = st.text_input("備註", placeholder="選填")
+        note_input = st.text_input("備註 (選填)", placeholder="例如：午餐")
         
-        st.write("")
+        st.write("") # 留白
         
+        # 存檔按鈕
         if st.button("確認存檔", type="primary", use_container_width=True):
             if amount_input is None or amount_input == 0:
-                st.warning("請輸入有效的金額。")
+                st.warning("⚠️ 請輸入金額！")
             else:
-                with st.spinner("資料同步中..."):
+                with st.spinner("正在上傳..."):
                     save_new_entry(date_input, type_input, category_input, amount_input, note_input)
-                st.success("✅ 已成功記錄！")
+                st.success("✅ 存檔成功！")
                 st.rerun()
 
 # 讀取資料
 df = load_data()
 
 # ==========================
-# 分頁 2: 收支報表 (含自訂範圍)
+# 分頁 2: 收支報表 (修復版)
 # ==========================
 with tab2:
     st.markdown("### 📊 財務分析")
@@ -180,10 +183,17 @@ with tab2:
         df["金額"] = pd.to_numeric(df["金額"], errors='coerce').fillna(0)
         df["日期"] = pd.to_datetime(df["日期"])
 
-        # --- 時間篩選器 (新增自訂範圍) ---
-        col_select, _ = st.columns([2,1])
-        with col_select:
-            time_period = st.selectbox("統計期間", ["本月", "近三個月", "本年度", "全部", "自訂範圍"])
+        # --- 時間篩選器 ---
+        time_period = st.selectbox("選擇統計範圍", ["本月", "近三個月", "本年度", "全部資料", "自訂範圍"])
 
         today = pd.Timestamp.today()
-        start_date
+        # 預設值 (避免報錯)
+        start_date = df["日期"].min()
+        end_date = df["日期"].max()
+
+        if time_period == "本月": 
+            start_date = today.replace(day=1)
+            end_date = today + pd.Timedelta(days=1)
+        elif time_period == "近三個月": 
+            start_date = today - pd.Timedelta(days=90)
+            end_date =
