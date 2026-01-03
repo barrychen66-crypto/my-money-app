@@ -12,17 +12,17 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/174jupio-yaY3ckuh6ca6I3UP0DA
 
 st.set_page_config(page_title="雲端記帳簿", layout="centered", page_icon="☁️")
 
-# --- CSS 樣式注入：Gemini 介面風格 (淡灰藍底 + 寶藍按鈕) ---
+# --- CSS 樣式注入：Google 專業藍配色 + 大字體 ---
 st.markdown("""
     <style>
-    /* 1. 背景：Gemini 風格的極淡灰藍色 (護眼、柔和) */
+    /* 1. 背景：極淡灰藍色 (護眼) */
     .stApp {
         background-color: #F0F4F9;
     }
     
     /* 2. 標題與文字：高對比深灰黑 */
     h1 {
-        color: #0B57D0 !important; /* Google 寶藍 */
+        color: #1A73E8 !important; /* Google 專業藍 */
         font-size: 3rem !important;
         font-weight: 800 !important;
     }
@@ -44,20 +44,20 @@ st.markdown("""
         font-weight: 700 !important;
     }
     
-    /* 4. 按鈕：Gemini 寶藍色 + 圓角 + 白字 */
+    /* 4. 按鈕：指定截圖中的 Google 藍色 */
     div.stButton > button {
-        background-color: #0B57D0; /* Gemini Blue */
+        background-color: #1A73E8; /* 您指定的藍色 */
         color: white !important;
-        border-radius: 20px; /* 圓潤一點 */
-        height: 4.5em; /* 按鈕加高，好點擊 */
+        border-radius: 20px;
+        height: 4.5em;
         font-size: 20px !important;
         font-weight: bold;
         border: none;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        transition: all 0.3s;
+        transition: all 0.2s;
     }
     div.stButton > button:hover {
-        background-color: #0042A9; /* 滑鼠移過去變深 */
+        background-color: #155db5; /* 滑鼠移過去稍微變深 */
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         color: white !important;
     }
@@ -69,25 +69,25 @@ st.markdown("""
     }
     .stTabs [data-baseweb="tab"] {
         height: 60px;
-        background-color: #E1E3E1; /* 未選中時是淺灰 */
+        background-color: #E1E3E1;
         color: #444746;
         font-size: 20px;
         font-weight: 600;
         border-radius: 10px 10px 0 0;
     }
-    /* 選中狀態 */
+    /* 選中狀態：使用新藍色 */
     .stTabs [aria-selected="true"] {
-        background-color: #0B57D0 !important;
+        background-color: #1A73E8 !important;
         color: white !important;
     }
     .stTabs [aria-selected="true"] p {
         color: white !important;
     }
     
-    /* 6. 指標數字 */
+    /* 6. 指標數字：使用新藍色 */
     div[data-testid="stMetricValue"] {
         font-size: 2.2rem !important;
-        color: #0B57D0 !important;
+        color: #1A73E8 !important;
         font-weight: 700;
     }
     
@@ -216,4 +216,85 @@ with tab2:
         elif time_period == "本年度":
             start_date = today.replace(month=1, day=1)
             end_date = today + pd.Timedelta(days=1)
-        elif time_period ==
+        elif time_period == "全部資料":
+            pass # 維持上面的預設值
+        elif time_period == "自訂範圍":
+            st.info("請在下方選擇日期")
+            c1, c2 = st.columns(2)
+            d1 = c1.date_input("開始", value=today - pd.Timedelta(days=7))
+            d2 = c2.date_input("結束", value=today)
+            start_date = pd.Timestamp(d1)
+            end_date = pd.Timestamp(d2) + pd.Timedelta(days=1)
+
+        # 篩選資料
+        mask = (df["日期"] >= start_date) & (df["日期"] < end_date)
+        filtered_df = df[mask]
+
+        if filtered_df.empty:
+            st.warning("⚠️ 此範圍內無資料。")
+        else:
+            total_income = filtered_df[filtered_df["類型"] == "收入"]["金額"].sum()
+            total_expense = filtered_df[filtered_df["類型"] == "支出"]["金額"].sum()
+            net_profit = total_income - total_expense
+
+            c1, c2 = st.columns(2)
+            c1.metric("總收入", f"${total_income:,.0f}")
+            c2.metric("總支出", f"${total_expense:,.0f}")
+            st.metric("淨結餘", f"${net_profit:,.0f}", delta="存下" if net_profit > 0 else "透支")
+
+            st.divider()
+
+            st.markdown("### 🍰 支出分佈圖")
+            expense_data = filtered_df[filtered_df["類型"] == "支出"]
+            
+            if not expense_data.empty:
+                # 使用新藍色系配色
+                blue_colors = ['#1A73E8', '#4285F4', '#64B5F6', '#1565C0', '#0D47A1', '#82B1FF']
+                
+                fig = px.pie(expense_data, values='金額', names='類別', hole=0.5, 
+                             color_discrete_sequence=blue_colors)
+                fig.update_traces(textinfo='percent+label', textfont_size=18)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("無支出紀錄。")
+            
+            with st.expander("🔎 詳細列表"):
+                st.dataframe(filtered_df.sort_values("日期", ascending=False), use_container_width=True)
+
+# ==========================
+# 分頁 3: 資料管理
+# ==========================
+with tab3:
+    st.markdown("### 📝 修改與刪除")
+    if df.empty:
+        st.write("無資料。")
+    else:
+        st.info("勾選框框刪除，點擊內容修改。")
+        
+        df_to_edit = df.copy()
+        df_to_edit["刪除"] = False
+        cols = df_to_edit.columns.tolist()
+        cols = cols[-1:] + cols[:-1]
+        df_to_edit = df_to_edit[cols]
+
+        edited_df = st.data_editor(
+            df_to_edit,
+            num_rows="dynamic",
+            use_container_width=True,
+            column_config={
+                "刪除": st.column_config.CheckboxColumn("刪除", width="small"),
+                "日期": st.column_config.DateColumn("日期", format="YYYY-MM-DD"),
+                "類型": st.column_config.SelectboxColumn("類型", options=["支出", "收入"], width="small"),
+                "類別": st.column_config.SelectboxColumn("類別", options=["飲食", "交通", "購物", "娛樂", "薪資", "其他"], width="medium"),
+                "金額": st.column_config.NumberColumn("金額", format="$%d"),
+                "備註": st.column_config.TextColumn("備註"),
+            }
+        )
+
+        st.write("")
+        if st.button("🔄 更新資料庫", type="primary", use_container_width=True):
+            final_df = edited_df[edited_df["刪除"] == False].drop(columns=["刪除"])
+            with st.spinner("更新中..."):
+                update_sheet_data(final_df)
+            st.success("完成！")
+            st.rerun()
