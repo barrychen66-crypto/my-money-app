@@ -18,7 +18,7 @@ def connect_to_gsheet():
             st.error("找不到 Secrets！請檢查 Streamlit 設定。")
             st.stop()
         
-        key_dict = json.loads(st.secrets["gcp_service_account"].strict=False)
+        key_dict = json.loads(st.secrets["gcp_service_account"], strict=False)
         creds = Credentials.from_service_account_info(key_dict, scopes=scope)
         client = gspread.authorize(creds)
         return client.open_by_url(SHEET_URL).sheet1
@@ -61,5 +61,6 @@ with st.expander("➕ 新增收支", expanded=True):
 df = load_data()
 if not df.empty:
     st.dataframe(df)
+
 
 
