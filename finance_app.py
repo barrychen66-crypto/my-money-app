@@ -196,4 +196,97 @@ with tab2:
             end_date = today + pd.Timedelta(days=1)
         elif time_period == "近三個月": 
             start_date = today - pd.Timedelta(days=90)
-            end_date =
+            end_date = today + pd.Timedelta(days=1)
+        elif time_period == "本年度":
+            start_date = today.replace(month=1, day=1)
+            end_date = today + pd.Timedelta(days=1)
+        elif time_period == "全部資料":
+            start_date = df["日期"].min()
+            end_date = df["日期"].max() + pd.Timedelta(days=1)
+        elif time_period == "自訂範圍":
+            st.info("請下方選擇開始與結束日期")
+            c1, c2 = st.columns(2)
+            d1 = c1.date_input("開始", value=today - pd.Timedelta(days=7))
+            d2 = c2.date_input("結束", value=today)
+            start_date = pd.Timestamp(d1)
+            end_date = pd.Timestamp(d2) + pd.Timedelta(days=1) # 包含結束當天
+
+        # 進行篩選
+        mask = (df["日期"] >= start_date) & (df["日期"] < end_date)
+        filtered_df = df[mask]
+
+        if filtered_df.empty:
+            st.warning("⚠️ 選擇的日期範圍內沒有資料。")
+        else:
+            # 計算金額
+            total_income = filtered_df[filtered_df["類型"] == "收入"]["金額"].sum()
+            total_expense = filtered_df[filtered_df["類型"] == "支出"]["金額"].sum()
+            net_profit = total_income - total_expense
+
+            # 顯示指標 (Metric)
+            c1, c2 = st.columns(2)
+            c1.metric("總收入", f"${total_income:,.0f}")
+            c2.metric("總支出", f"${total_expense:,.0f}")
+            st.metric("淨結餘", f"${net_profit:,.0f}", delta="存下" if net_profit > 0 else "透支")
+
+            st.divider()
+
+            # 圓餅圖：使用高對比配色
+            st.markdown("### 🍰 支出分佈圖")
+            expense_data = filtered_df[filtered_df["類型"] == "支出"]
+            
+            if not expense_data.empty:
+                # 高對比色票 (深紅、深藍、深綠、金黃)
+                high_contrast_colors = ['#800020', '#191970', '#006400', '#DAA520', '#8B4513', '#4B0082']
+                
+                fig = px.pie(expense_data, values='金額', names='類別', hole=0.5, 
+                             color_discrete_sequence=high_contrast_colors)
+                # 字體放大
+                fig.update_traces(textinfo='percent+label', textfont_size=18)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("此區間無支出紀錄。")
+            
+            # 顯示明細表格
+            with st.expander("🔎 查看詳細列表 (點擊展開)"):
+                st.dataframe(filtered_df.sort_values("日期", ascending=False), use_container_width=True)
+
+# ==========================
+# 分頁 3: 資料管理
+# ==========================
+with tab3:
+    st.markdown("### 📝 資料修改與刪除")
+    if df.empty:
+        st.write("目前無資料。")
+    else:
+        st.info("勾選左側框框可刪除，直接點擊內容可修改。")
+        
+        # 準備資料
+        df_to_edit = df.copy()
+        df_to_edit["刪除"] = False
+        cols = df_to_edit.columns.tolist()
+        cols = cols[-1:] + cols[:-1]
+        df_to_edit = df_to_edit[cols]
+
+        # 顯示可編輯表格
+        edited_df = st.data_editor(
+            df_to_edit,
+            num_rows="dynamic",
+            use_container_width=True,
+            column_config={
+                "刪除": st.column_config.CheckboxColumn("刪除", width="small"),
+                "日期": st.column_config.DateColumn("日期", format="YYYY-MM-DD"),
+                "類型": st.column_config.SelectboxColumn("類型", options=["支出", "收入"], width="small"),
+                "類別": st.column_config.SelectboxColumn("類別", options=["飲食", "交通", "購物", "娛樂", "薪資", "其他"], width="medium"),
+                "金額": st.column_config.NumberColumn("金額", format="$%d"),
+                "備註": st.column_config.TextColumn("備註"),
+            }
+        )
+
+        st.write("")
+        if st.button("🔄 更新資料庫", type="primary", use_container_width=True):
+            final_df = edited_df[edited_df["刪除"] == False].drop(columns=["刪除"])
+            with st.spinner("正在更新..."):
+                update_sheet_data(final_df)
+            st.success("更新完成！")
+            st.rerun()
