@@ -10,70 +10,74 @@ import datetime
 # ⚠️ 請將下方網址換成您自己的 Google 試算表網址！
 SHEET_URL = "https://docs.google.com/spreadsheets/d/174jupio-yaY3ckuh6ca6I3UP0DAEn7ZFwI4ilNwm0FM/edit?gid=0#gid=0"
 
-st.set_page_config(page_title="雲端記帳簿", layout="centered", page_icon="💎")
+st.set_page_config(page_title="雲端記帳簿", layout="centered", page_icon="☁️")
 
-# --- CSS 樣式注入：Tiffany 舒適配色 + 大字體 ---
+# --- CSS 樣式注入：Gemini 介面風格 (淡灰藍底 + 寶藍按鈕) ---
 st.markdown("""
     <style>
-    /* 1. 背景：極淡薄荷白 (最舒服的底色) */
+    /* 1. 背景：Gemini 風格的極淡灰藍色 (護眼、柔和) */
     .stApp {
-        background-color: #F5FFFA;
+        background-color: #F0F4F9;
     }
     
-    /* 2. 標題與文字：深灰藍 (清晰不刺眼) */
+    /* 2. 標題與文字：高對比深灰黑 */
     h1 {
-        color: #008B8B !important; /* 深湖水綠 */
+        color: #0B57D0 !important; /* Google 寶藍 */
         font-size: 3rem !important;
         font-weight: 800 !important;
     }
     h2, h3, .stMarkdown h3 {
-        color: #2F4F4F !important; /* 深岩灰 */
+        color: #1E1E1E !important; /* 深黑灰 */
         font-size: 1.8rem !important;
         font-weight: 700 !important;
     }
-    p, .stMarkdown p {
+    p, .stMarkdown p, .stMarkdown li {
         font-size: 1.3rem !important;
-        color: #333333 !important;
+        color: #1F1F1F !important;
+        font-weight: 500;
     }
     
-    /* 3. 輸入框標籤加大 */
+    /* 3. 輸入框標籤加大，顏色加深 */
     .stSelectbox label, .stDateInput label, .stNumberInput label, .stTextInput label, .stRadio label {
         font-size: 1.4rem !important;
-        color: #2F4F4F !important;
+        color: #1E1E1E !important;
         font-weight: 700 !important;
     }
     
-    /* 4. 按鈕：Tiffany 藍 + 白字 (舒適且明顯) */
+    /* 4. 按鈕：Gemini 寶藍色 + 圓角 + 白字 */
     div.stButton > button {
-        background-color: #0ABAB5; /* Tiffany Blue */
+        background-color: #0B57D0; /* Gemini Blue */
         color: white !important;
-        border-radius: 12px;
-        height: 4em; /* 按鈕加高 */
+        border-radius: 20px; /* 圓潤一點 */
+        height: 4.5em; /* 按鈕加高，好點擊 */
         font-size: 20px !important;
         font-weight: bold;
         border: none;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s;
     }
     div.stButton > button:hover {
-        background-color: #20B2AA; /* 滑鼠移過去變深一點 */
+        background-color: #0042A9; /* 滑鼠移過去變深 */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         color: white !important;
     }
 
-    /* 5. 分頁籤：清爽風格 */
+    /* 5. 分頁籤：選中時變寶藍色 */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
+        background-color: #F0F4F9;
     }
     .stTabs [data-baseweb="tab"] {
         height: 60px;
-        background-color: #E0FFFF; /* 淡藍底 */
-        color: #555555;
+        background-color: #E1E3E1; /* 未選中時是淺灰 */
+        color: #444746;
         font-size: 20px;
         font-weight: 600;
-        border-radius: 8px 8px 0 0;
+        border-radius: 10px 10px 0 0;
     }
     /* 選中狀態 */
     .stTabs [aria-selected="true"] {
-        background-color: #0ABAB5 !important;
+        background-color: #0B57D0 !important;
         color: white !important;
     }
     .stTabs [aria-selected="true"] p {
@@ -83,7 +87,15 @@ st.markdown("""
     /* 6. 指標數字 */
     div[data-testid="stMetricValue"] {
         font-size: 2.2rem !important;
-        color: #008B8B !important;
+        color: #0B57D0 !important;
+        font-weight: 700;
+    }
+    
+    /* 7. 表格背景優化 */
+    [data-testid="stDataFrame"] {
+        background-color: white;
+        border-radius: 10px;
+        padding: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -129,7 +141,7 @@ def update_sheet_data(df):
     sheet.update(data_to_write)
 
 # --- 3. 介面設計 ---
-st.markdown("# 💎 雲端記帳簿")
+st.markdown("# ☁️ 雲端記帳簿")
 
 # Tabs 分頁
 tab1, tab2, tab3 = st.tabs(["新增紀錄", "收支報表", "資料管理"])
@@ -154,7 +166,7 @@ with tab1:
             
         category_input = st.selectbox("分類", cat_options)
         
-        # 預設為空，直接輸入
+        # 預設為空 (value=None)
         amount_input = st.number_input("金額 (新台幣)", min_value=0, step=1, value=None, placeholder="點此輸入金額")
         
         note_input = st.text_input("備註 (選填)", placeholder="例如：午餐")
@@ -189,12 +201,12 @@ with tab2:
 
         today = pd.Timestamp.today()
         
-        # --- 關鍵修正：先設定預設值，確保變數一定存在 ---
-        # 預設為全部資料的範圍
+        # --- 關鍵修正：確保 start_date 和 end_date 永遠有預設值 ---
+        # 先設定為「全部範圍」，避免變數沒定義
         start_date = df["日期"].min()
         end_date = df["日期"].max() + pd.Timedelta(days=1)
 
-        # 根據選擇覆蓋變數
+        # 再根據選項修改範圍
         if time_period == "本月": 
             start_date = today.replace(day=1)
             end_date = today + pd.Timedelta(days=1)
@@ -204,83 +216,4 @@ with tab2:
         elif time_period == "本年度":
             start_date = today.replace(month=1, day=1)
             end_date = today + pd.Timedelta(days=1)
-        elif time_period == "自訂範圍":
-            st.info("請下方選擇日期")
-            c1, c2 = st.columns(2)
-            d1 = c1.date_input("開始", value=today - pd.Timedelta(days=7))
-            d2 = c2.date_input("結束", value=today)
-            start_date = pd.Timestamp(d1)
-            end_date = pd.Timestamp(d2) + pd.Timedelta(days=1)
-
-        # 篩選資料
-        mask = (df["日期"] >= start_date) & (df["日期"] < end_date)
-        filtered_df = df[mask]
-
-        if filtered_df.empty:
-            st.warning("⚠️ 此範圍內無資料。")
-        else:
-            total_income = filtered_df[filtered_df["類型"] == "收入"]["金額"].sum()
-            total_expense = filtered_df[filtered_df["類型"] == "支出"]["金額"].sum()
-            net_profit = total_income - total_expense
-
-            c1, c2 = st.columns(2)
-            c1.metric("總收入", f"${total_income:,.0f}")
-            c2.metric("總支出", f"${total_expense:,.0f}")
-            st.metric("淨結餘", f"${net_profit:,.0f}", delta="存下" if net_profit > 0 else "透支")
-
-            st.divider()
-
-            st.markdown("### 🍰 支出分佈圖")
-            expense_data = filtered_df[filtered_df["類型"] == "支出"]
-            
-            if not expense_data.empty:
-                # Tiffany 藍色系圖表
-                teal_colors = ['#0ABAB5', '#40E0D0', '#20B2AA', '#008B8B', '#5F9EA0', '#4682B4']
-                
-                fig = px.pie(expense_data, values='金額', names='類別', hole=0.5, 
-                             color_discrete_sequence=teal_colors)
-                fig.update_traces(textinfo='percent+label', textfont_size=18)
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("無支出紀錄。")
-            
-            with st.expander("🔎 詳細列表"):
-                st.dataframe(filtered_df.sort_values("日期", ascending=False), use_container_width=True)
-
-# ==========================
-# 分頁 3: 資料管理
-# ==========================
-with tab3:
-    st.markdown("### 📝 修改與刪除")
-    if df.empty:
-        st.write("無資料。")
-    else:
-        st.info("勾選框框刪除，點擊內容修改。")
-        
-        df_to_edit = df.copy()
-        df_to_edit["刪除"] = False
-        cols = df_to_edit.columns.tolist()
-        cols = cols[-1:] + cols[:-1]
-        df_to_edit = df_to_edit[cols]
-
-        edited_df = st.data_editor(
-            df_to_edit,
-            num_rows="dynamic",
-            use_container_width=True,
-            column_config={
-                "刪除": st.column_config.CheckboxColumn("刪除", width="small"),
-                "日期": st.column_config.DateColumn("日期", format="YYYY-MM-DD"),
-                "類型": st.column_config.SelectboxColumn("類型", options=["支出", "收入"], width="small"),
-                "類別": st.column_config.SelectboxColumn("類別", options=["飲食", "交通", "購物", "娛樂", "薪資", "其他"], width="medium"),
-                "金額": st.column_config.NumberColumn("金額", format="$%d"),
-                "備註": st.column_config.TextColumn("備註"),
-            }
-        )
-
-        st.write("")
-        if st.button("🔄 更新資料庫", type="primary", use_container_width=True):
-            final_df = edited_df[edited_df["刪除"] == False].drop(columns=["刪除"])
-            with st.spinner("更新中..."):
-                update_sheet_data(final_df)
-            st.success("完成！")
-            st.rerun()
+        elif time_period ==
