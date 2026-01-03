@@ -12,89 +12,92 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/174jupio-yaY3ckuh6ca6I3UP0DA
 
 st.set_page_config(page_title="雲端記帳簿", layout="centered", page_icon="☁️")
 
-# --- CSS 樣式注入：Google 專業藍配色 + 大字體 ---
+# --- CSS 樣式注入：Gemini 選單風格 (淡藍底 + 深藍字) ---
 st.markdown("""
     <style>
-    /* 1. 背景：極淡灰藍色 (護眼) */
+    /* 1. 整體背景：Gemini 風格的極淡灰藍色 */
     .stApp {
         background-color: #F0F4F9;
     }
     
-    /* 2. 標題與文字：高對比深灰黑 */
-    h1 {
-        color: #1A73E8 !important; /* Google 專業藍 */
-        font-size: 3rem !important;
-        font-weight: 800 !important;
-    }
-    h2, h3, .stMarkdown h3 {
-        color: #1E1E1E !important; /* 深黑灰 */
-        font-size: 1.8rem !important;
+    /* 2. 標題與一般文字：深灰色 (依照指示) */
+    h1, h2, h3, .stMarkdown h3 {
+        color: #1F1F1F !important; /* 接近純黑的深灰 */
+        font-family: "Microsoft JhengHei", sans-serif;
         font-weight: 700 !important;
     }
-    p, .stMarkdown p, .stMarkdown li {
+    
+    p, .stMarkdown p, .stMarkdown li, div {
+        color: #444746 !important; /* 標準深灰色 */
         font-size: 1.3rem !important;
-        color: #1F1F1F !important;
         font-weight: 500;
     }
     
-    /* 3. 輸入框標籤加大，顏色加深 */
+    /* 3. 輸入框標籤：深灰色 */
     .stSelectbox label, .stDateInput label, .stNumberInput label, .stTextInput label, .stRadio label {
         font-size: 1.4rem !important;
-        color: #1E1E1E !important;
+        color: #444746 !important;
         font-weight: 700 !important;
     }
     
-    /* 4. 按鈕：指定截圖中的 Google 藍色 */
+    /* 4. 按鈕：【關鍵修改】依照照片配色 */
+    /* 背景：淡藍色 | 文字：深寶藍色 */
     div.stButton > button {
-        background-color: #1A73E8; /* 您指定的藍色 */
-        color: white !important;
-        border-radius: 20px;
-        height: 4.5em;
+        background-color: #D3E3FD; /* 照片中的淡藍底 */
+        color: #0B57D0 !important; /* 照片中的深藍字 */
+        border-radius: 24px; /* 圓潤的膠囊狀 */
+        height: 4.5em; 
         font-size: 20px !important;
-        font-weight: bold;
+        font-weight: 800; /* 字體加粗 */
         border: none;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: none; /* 扁平化風格 */
         transition: all 0.2s;
     }
+    
+    /* 滑鼠移過去的效果 */
     div.stButton > button:hover {
-        background-color: #155db5; /* 滑鼠移過去稍微變深 */
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        color: white !important;
+        background-color: #C2E7FF; /* 稍微再亮一點 */
+        color: #004A77 !important; /* 字變更深 */
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
-    /* 5. 分頁籤：選中時變寶藍色 */
+    /* 5. 分頁籤：選中時也變成淡藍底+深藍字 */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: #F0F4F9;
     }
     .stTabs [data-baseweb="tab"] {
         height: 60px;
-        background-color: #E1E3E1;
-        color: #444746;
+        background-color: #E1E3E1; /* 未選中是淺灰 */
+        color: #444746; /* 未選中文字是深灰 */
         font-size: 20px;
         font-weight: 600;
-        border-radius: 10px 10px 0 0;
+        border-radius: 12px 12px 0 0;
     }
-    /* 選中狀態：使用新藍色 */
+    
+    /* 選中狀態：完全復刻按鈕風格 */
     .stTabs [aria-selected="true"] {
-        background-color: #1A73E8 !important;
-        color: white !important;
+        background-color: #D3E3FD !important; /* 淡藍底 */
+        color: #0B57D0 !important; /* 深藍字 */
     }
     .stTabs [aria-selected="true"] p {
-        color: white !important;
+        color: #0B57D0 !important;
     }
     
-    /* 6. 指標數字：使用新藍色 */
+    /* 6. 指標數字 (金額)：使用深藍色強調 */
     div[data-testid="stMetricValue"] {
         font-size: 2.2rem !important;
-        color: #1A73E8 !important;
+        color: #0B57D0 !important;
         font-weight: 700;
     }
+    div[data-testid="stMetricLabel"] {
+        color: #444746 !important;
+    }
     
-    /* 7. 表格背景優化 */
+    /* 7. 表格優化 */
     [data-testid="stDataFrame"] {
         background-color: white;
-        border-radius: 10px;
+        border-radius: 12px;
         padding: 10px;
     }
     </style>
@@ -167,7 +170,7 @@ with tab1:
         category_input = st.selectbox("分類", cat_options)
         
         # 預設為空 (value=None)
-        amount_input = st.number_input("金額 (新台幣)", min_value=0, step=1, value=None, placeholder="點此輸入金額")
+        amount_input = st.number_input("金額 (NT$)", min_value=0, step=1, value=None, placeholder="點此輸入金額")
         
         note_input = st.text_input("備註 (選填)", placeholder="例如：午餐")
         
@@ -186,7 +189,7 @@ with tab1:
 df = load_data()
 
 # ==========================
-# 分頁 2: 收支報表 (修復版)
+# 分頁 2: 收支報表 (單位 NT$)
 # ==========================
 with tab2:
     st.markdown("### 📊 財務分析")
@@ -201,12 +204,11 @@ with tab2:
 
         today = pd.Timestamp.today()
         
-        # --- 關鍵修正：確保 start_date 和 end_date 永遠有預設值 ---
-        # 先設定為「全部範圍」，避免變數沒定義
+        # --- 變數預設值 (防止報錯) ---
         start_date = df["日期"].min()
         end_date = df["日期"].max() + pd.Timedelta(days=1)
 
-        # 再根據選項修改範圍
+        # 根據選項修改範圍
         if time_period == "本月": 
             start_date = today.replace(day=1)
             end_date = today + pd.Timedelta(days=1)
@@ -217,7 +219,7 @@ with tab2:
             start_date = today.replace(month=1, day=1)
             end_date = today + pd.Timedelta(days=1)
         elif time_period == "全部資料":
-            pass # 維持上面的預設值
+            pass 
         elif time_period == "自訂範圍":
             st.info("請在下方選擇日期")
             c1, c2 = st.columns(2)
@@ -238,9 +240,9 @@ with tab2:
             net_profit = total_income - total_expense
 
             c1, c2 = st.columns(2)
-            c1.metric("總收入", f"${total_income:,.0f}")
-            c2.metric("總支出", f"${total_expense:,.0f}")
-            st.metric("淨結餘", f"${net_profit:,.0f}", delta="存下" if net_profit > 0 else "透支")
+            c1.metric("總收入", f"NT$ {total_income:,.0f}")
+            c2.metric("總支出", f"NT$ {total_expense:,.0f}")
+            st.metric("淨結餘", f"NT$ {net_profit:,.0f}", delta="存下" if net_profit > 0 else "透支")
 
             st.divider()
 
@@ -248,11 +250,11 @@ with tab2:
             expense_data = filtered_df[filtered_df["類型"] == "支出"]
             
             if not expense_data.empty:
-                # 使用新藍色系配色
-                blue_colors = ['#1A73E8', '#4285F4', '#64B5F6', '#1565C0', '#0D47A1', '#82B1FF']
+                # 使用 Gemini 藍/綠/紫色系
+                gemini_colors = ['#0B57D0', '#4285F4', '#7C4DFF', '#00C853', '#1976D2', '#BBDEFB']
                 
                 fig = px.pie(expense_data, values='金額', names='類別', hole=0.5, 
-                             color_discrete_sequence=blue_colors)
+                             color_discrete_sequence=gemini_colors)
                 fig.update_traces(textinfo='percent+label', textfont_size=18)
                 st.plotly_chart(fig, use_container_width=True)
             else:
@@ -286,7 +288,7 @@ with tab3:
                 "日期": st.column_config.DateColumn("日期", format="YYYY-MM-DD"),
                 "類型": st.column_config.SelectboxColumn("類型", options=["支出", "收入"], width="small"),
                 "類別": st.column_config.SelectboxColumn("類別", options=["飲食", "交通", "購物", "娛樂", "薪資", "其他"], width="medium"),
-                "金額": st.column_config.NumberColumn("金額", format="$%d"),
+                "金額": st.column_config.NumberColumn("金額", format="NT$%d"), 
                 "備註": st.column_config.TextColumn("備註"),
             }
         )
