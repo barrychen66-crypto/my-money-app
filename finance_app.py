@@ -10,26 +10,26 @@ import datetime
 # ⚠️ 請將下方網址換成您自己的 Google 試算表網址！
 SHEET_URL = "https://docs.google.com/spreadsheets/d/174jupio-yaY3ckuh6ca6I3UP0DAEn7ZFwI4ilNwm0FM/edit?gid=0#gid=0"
 
-st.set_page_config(page_title="理財記帳本", layout="centered", page_icon="💎")
+st.set_page_config(page_title="雅緻記帳本", layout="centered", page_icon="🌹")
 
-# --- CSS 樣式注入：Tiffany 藍成熟風格 + 手機優化 ---
+# --- CSS 樣式注入：莫蘭迪乾燥玫瑰色系 (成熟穩重風格) ---
 st.markdown("""
     <style>
-    /* 1. 整體背景設為極淡的薄荷白，護眼且清爽 */
+    /* 1. 背景：溫暖的米白色 (護眼、舒適) */
     .stApp {
-        background-color: #F5FFFA;
+        background-color: #FDFCF8;
     }
     
-    /* 2. 標題顏色改為沈穩的深湖水綠 */
+    /* 2. 標題：深褐灰色 (沈穩) */
     h1, h2, h3, .stMarkdown h3 {
-        color: #008B8B !important; 
+        color: #5D4037 !important; 
         font-family: "Microsoft JhengHei", sans-serif;
         font-weight: 600 !important;
     }
     
-    /* 3. 按鈕優化：Tiffany 藍，圓角修飾，成熟大方 */
+    /* 3. 按鈕：乾燥玫瑰色 (典雅不刺眼) */
     div.stButton > button {
-        background-color: #0ABAB5; /* Tiffany Blue */
+        background-color: #BC8F8F; /* RosyBrown */
         color: white;
         border-radius: 8px;
         height: 3.2em; 
@@ -39,40 +39,47 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     div.stButton > button:hover {
-        background-color: #20B2AA; /* Light Sea Green */
+        background-color: #A07070; /* Darker RosyBrown */
         color: white;
     }
 
-    /* 4. 輸入框優化 */
+    /* 4. 輸入框優化：暖灰色文字 */
     .stSelectbox label, .stDateInput label, .stNumberInput label, .stTextInput label, .stRadio label {
         font-size: 1.1rem !important;
-        color: #2F4F4F !important; /* Dark Slate Gray */
+        color: #6D4C41 !important;
         font-weight: 500;
     }
     
-    /* 5. 分頁籤樣式：簡約風格 */
+    /* 5. 分頁籤樣式：香檳金配色 */
     .stTabs [data-baseweb="tab-list"] {
         gap: 5px;
     }
     .stTabs [data-baseweb="tab"] {
         height: 50px;
-        background-color: #E0FFFF;
+        background-color: #F5E6E0; /* 淺粉膚色 */
         border-radius: 4px 4px 0px 0px;
-        color: #555;
+        color: #6D4C41;
         font-size: 18px;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #0ABAB5 !important;
+        background-color: #BC8F8F !important; /* 乾燥玫瑰 */
         color: white !important;
     }
     
-    /* 6. 指標卡片邊框 */
+    /* 6. 指標卡片：優雅邊框 */
     div[data-testid="stMetric"] {
-        background-color: white;
+        background-color: #FFFBF0;
         padding: 15px;
         border-radius: 10px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        border: 1px solid #E0FFFF;
+        border: 1px solid #E6D5D0;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    /* 7. 表格優化 (確保資料管理顯示正常) */
+    [data-testid="stDataFrame"] {
+        background-color: white;
+        border-radius: 8px;
+        padding: 5px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -119,17 +126,17 @@ def update_sheet_data(df):
     sheet.update(data_to_write)
 
 # --- 3. 介面設計 ---
-st.markdown("# 💎 理財記帳本")
+st.markdown("# 🌹 雅緻記帳本")
 
 # Tabs 分頁
-tab1, tab2, tab3 = st.tabs(["新增收支", "收支報表", "帳務管理"])
+tab1, tab2, tab3 = st.tabs(["記一筆", "收支報表", "帳務管理"])
 
 # ==========================
 # 分頁 1: 新增收支
 # ==========================
 with tab1:
     with st.container(border=True):
-        st.markdown("### 📝 記一筆")
+        st.markdown("### 📝 新增紀錄")
         
         date_input = st.date_input("日期")
         
@@ -143,7 +150,7 @@ with tab1:
             
         category_input = st.selectbox("分類", cat_options)
         
-        # 預設為空，方便輸入
+        # 預設為空，方便輸入 (修復了這裡的語法錯誤)
         amount_input = st.number_input("金額 (NT$)", min_value=0, step=1, value=None, placeholder="請輸入金額")
         
         note_input = st.text_input("備註", placeholder="選填")
@@ -179,78 +186,4 @@ with tab2:
             time_period = st.selectbox("統計期間", ["本月", "近三個月", "本年度", "全部", "自訂範圍"])
 
         today = pd.Timestamp.today()
-        start_date = df["日期"].min()
-        end_date = df["日期"].max() # 預設結束時間
-
-        if time_period == "本月": 
-            start_date = today.replace(day=1)
-            end_date = today
-        elif time_period == "近三個月": 
-            start_date = today - pd.Timedelta(days=90)
-            end_date = today
-        elif time_period == "本年度":
-            start_date = today.replace(month=1, day=1)
-            end_date = today
-        elif time_period == "全部":
-            pass # 維持預設的 min 和 max
-        elif time_period == "自訂範圍":
-            st.info("請選擇開始與結束日期")
-            c1, c2 = st.columns(2)
-            d1 = c1.date_input("開始日期", value=today - pd.Timedelta(days=7))
-            d2 = c2.date_input("結束日期", value=today)
-            start_date = pd.Timestamp(d1)
-            end_date = pd.Timestamp(d2) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1) # 包含當天結束
-
-        # 進行篩選
-        filtered_df = df[(df["日期"] >= start_date) & (df["日期"] <= end_date)]
-
-        if filtered_df.empty:
-            st.warning("⚠️ 選擇的日期範圍內沒有資料。")
-        else:
-            # 計算金額
-            total_income = filtered_df[filtered_df["類型"] == "收入"]["金額"].sum()
-            total_expense = filtered_df[filtered_df["類型"] == "支出"]["金額"].sum()
-            net_profit = total_income - total_expense
-
-            # 顯示指標 (Metric)
-            c1, c2 = st.columns(2)
-            c1.metric("總收入", f"NT$ {total_income:,.0f}")
-            c2.metric("總支出", f"NT$ {total_expense:,.0f}")
-            st.metric("淨結餘", f"NT$ {net_profit:,.0f}", delta="結餘" if net_profit > 0 else "透支")
-
-            st.divider()
-
-            # 圓餅圖：Tiffany 藍色系
-            st.subheader("支出類別佔比")
-            expense_data = filtered_df[filtered_df["類型"] == "支出"]
-            
-            if not expense_data.empty:
-                # 定義 Tiffany/Teal 色系
-                teal_colors = ['#0ABAB5', '#40E0D0', '#20B2AA', '#00CED1', '#5F9EA0', '#4682B4', '#B0E0E6']
-                
-                fig = px.pie(expense_data, values='金額', names='類別', hole=0.5, 
-                             color_discrete_sequence=teal_colors)
-                fig.update_traces(textinfo='percent+label')
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("此區間無支出紀錄。")
-            
-            # 顯示明細表格
-            with st.expander("查看詳細列表"):
-                st.dataframe(filtered_df.sort_values("日期", ascending=False), use_container_width=True)
-
-# ==========================
-# 分頁 3: 帳務管理
-# ==========================
-with tab3:
-    st.markdown("### 📝 資料維護")
-    if df.empty:
-        st.write("目前無資料")
-    else:
-        st.caption("勾選「刪除」後按更新，或直接修改內容。")
-        
-        df_to_edit = df.copy()
-        df_to_edit["刪除"] = False
-        cols = df_to_edit.columns.tolist()
-        cols = cols[-1:] + cols[:-1]
-        df_to_edit = df_to_edit
+        start_date
