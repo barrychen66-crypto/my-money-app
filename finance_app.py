@@ -181,16 +181,20 @@ with tab2:
     if df.empty:
         st.info("目前尚無資料。")
     else:
+        # 資料轉換
         df["金額"] = pd.to_numeric(df["金額"], errors='coerce').fillna(0)
         df["日期"] = pd.to_datetime(df["日期"])
 
         time_period = st.selectbox("選擇統計範圍", ["本月", "近三個月", "本年度", "全部資料", "自訂範圍"])
 
         today = pd.Timestamp.today()
-        # 初始化預設變數，防止 NameError
+        
+        # --- 關鍵修正：先設定預設值，確保變數一定存在 ---
+        # 預設為全部資料的範圍
         start_date = df["日期"].min()
         end_date = df["日期"].max() + pd.Timedelta(days=1)
 
+        # 根據選擇覆蓋變數
         if time_period == "本月": 
             start_date = today.replace(day=1)
             end_date = today + pd.Timedelta(days=1)
@@ -200,8 +204,6 @@ with tab2:
         elif time_period == "本年度":
             start_date = today.replace(month=1, day=1)
             end_date = today + pd.Timedelta(days=1)
-        elif time_period == "全部資料":
-            pass # 維持預設值
         elif time_period == "自訂範圍":
             st.info("請下方選擇日期")
             c1, c2 = st.columns(2)
