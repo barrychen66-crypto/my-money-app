@@ -19,34 +19,34 @@ EXPENSE_CATS = [
     "醫療", "保險", "人情", "教育", "保養品", "房租費", 
     "汽機車保養維修", "稅金", "捐款", "其他"
 ]
-INCOME_CATS = ["薪資", "獎金", "美股", "台股", "基金", "退稅", "其他"]
+INCOME_CATS = ["薪資", "獎金", "投資", "兼職", "租金", "股息", "退稅", "其他"]
 
-# --- CSS 樣式注入：Gemini 選單風格 (淡藍底 + 深藍字) ---
+# --- CSS 樣式注入：Gemini 風格 + 深色模式強制修正 ---
 st.markdown("""
     <style>
-    /* 整體背景 */
+    /* 1. 整體背景固定為淺色 */
     .stApp { background-color: #F0F4F9; }
     
-    /* 字體顏色與大小優化 */
-    h1, h2, h3, .stMarkdown h3 {
+    /* 2. 強制所有文字顏色為深色 (避免深色模式反白) */
+    h1, h2, h3, .stMarkdown h3, .stMarkdown h1, .stMarkdown h2 {
         color: #1F1F1F !important;
         font-family: "Microsoft JhengHei", sans-serif;
         font-weight: 700 !important;
     }
-    p, .stMarkdown p, div, label {
+    p, .stMarkdown p, div, label, span {
         color: #444746 !important;
-        font-size: 1.3rem !important;
+        font-family: "Microsoft JhengHei", sans-serif;
         font-weight: 500;
     }
     
-    /* 輸入框標籤 */
+    /* 3. 輸入框標籤 */
     .stSelectbox label, .stDateInput label, .stNumberInput label, .stTextInput label, .stRadio label {
         font-size: 1.4rem !important;
         color: #444746 !important;
         font-weight: 700 !important;
     }
     
-    /* 按鈕：Gemini 風格 */
+    /* 4. 按鈕：Gemini 風格 */
     div.stButton > button {
         background-color: #D3E3FD;
         color: #0B57D0 !important;
@@ -62,7 +62,7 @@ st.markdown("""
         color: #004A77 !important;
     }
 
-    /* 分頁籤風格 */
+    /* 5. 分頁籤風格 */
     .stTabs [data-baseweb="tab-list"] { gap: 8px; background-color: #F0F4F9; }
     .stTabs [data-baseweb="tab"] {
         height: 60px;
@@ -78,7 +78,7 @@ st.markdown("""
     }
     .stTabs [aria-selected="true"] p { color: #0B57D0 !important; }
     
-    /* 指標數字 */
+    /* 6. 指標數字 */
     div[data-testid="stMetricValue"] {
         font-size: 2.2rem !important;
         color: #0B57D0 !important;
@@ -86,11 +86,47 @@ st.markdown("""
     }
     div[data-testid="stMetricLabel"] { color: #444746 !important; }
     
-    /* 表格背景 */
+    /* 7. 表格背景優化 */
     [data-testid="stDataFrame"] {
         background-color: white;
         border-radius: 12px;
         padding: 10px;
+    }
+    
+    /* --- 關鍵修正：強制輸入框與下拉選單使用白底黑字 (解決 iPhone 深色模式問題) --- */
+    
+    /* 下拉選單框框 */
+    div[data-baseweb="select"] > div {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        border-color: #CCCCCC !important;
+    }
+    
+    /* 下拉選單彈出的清單 (Popover) */
+    div[data-baseweb="popover"], div[data-baseweb="menu"] {
+        background-color: #FFFFFF !important;
+    }
+    
+    /* 清單裡的選項文字 */
+    div[data-baseweb="menu"] li {
+        color: #000000 !important;
+        background-color: #FFFFFF !important;
+    }
+    
+    /* 選中時的選項背景 */
+    div[data-baseweb="menu"] li[aria-selected="true"] {
+        background-color: #D3E3FD !important; /* 淺藍底 */
+    }
+    
+    /* 輸入框 (數字、文字) */
+    input {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+    
+    /* 日期選擇器背景 */
+    div[data-baseweb="calendar"] {
+        background-color: #FFFFFF !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -146,7 +182,7 @@ tab1, tab2, tab3 = st.tabs(["新增紀錄", "收支報表", "資料管理"])
 # ==========================
 with tab1:
     with st.container(border=True):
-        st.markdown("### 📝 記錄")
+        st.markdown("### 📝 記一筆")
         
         c1, c2 = st.columns(2)
         with c1:
@@ -269,35 +305,36 @@ with tab3:
         if 'editor_key' not in st.session_state:
             st.session_state.editor_key = 0
 
-        # 全選與取消全選按鈕
+        # 全選與取消全選按鈕 (Streamlit 限制：必須使用按鈕來觸發全選)
         col_btn1, col_btn2 = st.columns([1, 2])
         with col_btn1:
             if st.button("☑️ 全選刪除", use_container_width=True):
                 st.session_state.select_all = True
-                st.session_state.editor_key += 1 # 強制刷新表格
+                st.session_state.editor_key += 1 
                 st.rerun()
         with col_btn2:
             if st.button("⬜ 取消全選", use_container_width=True):
                 st.session_state.select_all = False
-                st.session_state.editor_key += 1 # 強制刷新表格
+                st.session_state.editor_key += 1 
                 st.rerun()
 
         df_to_edit = df.copy()
-        # 根據按鈕狀態設定「刪除」欄位的預設值
         df_to_edit["刪除"] = st.session_state.select_all
         
+        # 移動欄位順序
         cols = df_to_edit.columns.tolist()
         cols = cols[-1:] + cols[:-1]
         df_to_edit = df_to_edit[cols]
 
         all_categories = sorted(list(set(EXPENSE_CATS + INCOME_CATS)))
 
-        # 加入 key 參數，讓按鈕可以強制重置表格
+        # 加入 hide_index=True 隱藏最左邊無用的索引欄 (0, 1, 2...)
         edited_df = st.data_editor(
             df_to_edit,
             key=f"editor_{st.session_state.editor_key}",
             num_rows="dynamic",
             use_container_width=True,
+            hide_index=True,  # ★ 這裡隱藏了最左邊的索引列 ★
             column_config={
                 "刪除": st.column_config.CheckboxColumn("刪除", width="small"),
                 "日期": st.column_config.DateColumn("日期", format="YYYY-MM-DD", width="small"), 
@@ -315,4 +352,3 @@ with tab3:
                 update_sheet_data(final_df)
             st.success("完成！")
             st.rerun()
-
