@@ -12,7 +12,7 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/174jupio-yaY3ckuh6ca6I3UP0DA
 
 st.set_page_config(page_title="雲端記帳簿", layout="centered", page_icon="☁️")
 
-# --- 定義支出與收入的選項 ---
+# --- 定義支出與收入的選項 (已確認為最新清單) ---
 EXPENSE_CATS = [
     "飲食", "交通", "購物", "娛樂", "水費", "電費", "瓦斯費", 
     "勞保費", "健保費", "電話費", "停車管理費", "油錢", 
@@ -21,19 +21,19 @@ EXPENSE_CATS = [
 ]
 INCOME_CATS = ["薪資", "獎金", "投資", "兼職", "租金", "股息", "退稅", "其他"]
 
-# --- CSS 樣式注入：Gemini 風格 + 深色模式強制修正 ---
+# --- CSS 樣式注入：Gemini 風格 + 強力深色模式修正 ---
 st.markdown("""
     <style>
     /* 1. 整體背景固定為淺色 */
-    .stApp { background-color: #F0F4F9; }
+    .stApp { background-color: #F0F4F9 !important; }
     
-    /* 2. 強制所有文字顏色為深色 (避免深色模式反白) */
+    /* 2. 強制所有文字顏色為深色 */
     h1, h2, h3, .stMarkdown h3, .stMarkdown h1, .stMarkdown h2 {
         color: #1F1F1F !important;
         font-family: "Microsoft JhengHei", sans-serif;
         font-weight: 700 !important;
     }
-    p, .stMarkdown p, div, label, span {
+    p, .stMarkdown p, div, label, span, li {
         color: #444746 !important;
         font-family: "Microsoft JhengHei", sans-serif;
         font-weight: 500;
@@ -63,7 +63,7 @@ st.markdown("""
     }
 
     /* 5. 分頁籤風格 */
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; background-color: #F0F4F9; }
+    .stTabs [data-baseweb="tab-list"] { gap: 8px; background-color: #F0F4F9 !important; }
     .stTabs [data-baseweb="tab"] {
         height: 60px;
         background-color: #E1E3E1;
@@ -88,45 +88,51 @@ st.markdown("""
     
     /* 7. 表格背景優化 */
     [data-testid="stDataFrame"] {
-        background-color: white;
+        background-color: white !important;
         border-radius: 12px;
         padding: 10px;
     }
+
+    /* --- 8. 【強力修正】下拉選單與深色模式 --- */
     
-    /* --- 關鍵修正：強制輸入框與下拉選單使用白底黑字 (解決 iPhone 深色模式問題) --- */
-    
-    /* 下拉選單框框 */
+    /* 強制下拉選單容器背景為白色 */
     div[data-baseweb="select"] > div {
         background-color: #FFFFFF !important;
         color: #000000 !important;
-        border-color: #CCCCCC !important;
+        border: 1px solid #CCCCCC !important;
     }
     
-    /* 下拉選單彈出的清單 (Popover) */
-    div[data-baseweb="popover"], div[data-baseweb="menu"] {
+    /* 下拉選單彈出層 (Popover) 背景 */
+    div[data-baseweb="popover"] {
         background-color: #FFFFFF !important;
     }
     
-    /* 清單裡的選項文字 */
-    div[data-baseweb="menu"] li {
+    /* 選單列表 (Menu) 背景 */
+    ul[data-baseweb="menu"] {
+        background-color: #FFFFFF !important;
+    }
+    
+    /* 選項 (Option) 文字顏色 - 強制黑色 */
+    li[data-baseweb="option"] {
         color: #000000 !important;
         background-color: #FFFFFF !important;
     }
     
-    /* 選中時的選項背景 */
-    div[data-baseweb="menu"] li[aria-selected="true"] {
-        background-color: #D3E3FD !important; /* 淺藍底 */
+    /* 選項文字內容 */
+    div[data-baseweb="select"] span {
+        color: #000000 !important;
     }
     
-    /* 輸入框 (數字、文字) */
+    /* 輸入框 (數字、文字) 背景 */
     input {
         background-color: #FFFFFF !important;
         color: #000000 !important;
     }
     
-    /* 日期選擇器背景 */
-    div[data-baseweb="calendar"] {
+    /* 修正手機上的原生選單背景 (如果有的話) */
+    select {
         background-color: #FFFFFF !important;
+        color: #000000 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -190,6 +196,7 @@ with tab1:
         with c2:
             type_input = st.radio("類型", ["支出", "收入"], horizontal=True)
         
+        # 根據類型顯示對應的選項
         if type_input == "支出":
             cat_options = EXPENSE_CATS
         else:
@@ -290,7 +297,7 @@ with tab2:
                 )
 
 # ==========================
-# 分頁 3: 資料管理 (新增全選功能)
+# 分頁 3: 資料管理 (新增全選功能 + 修復版)
 # ==========================
 with tab3:
     st.markdown("### 📝 修改與刪除")
