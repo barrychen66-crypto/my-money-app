@@ -146,7 +146,7 @@ tab1, tab2, tab3 = st.tabs(["新增紀錄", "收支報表", "資料管理"])
 # ==========================
 with tab1:
     with st.container(border=True):
-        st.markdown("### 📝 記一筆")
+        st.markdown("### 📝 記錄")
         
         c1, c2 = st.columns(2)
         with c1:
@@ -315,3 +315,4 @@ with tab3:
                 update_sheet_data(final_df)
             st.success("完成！")
             st.rerun()
+
