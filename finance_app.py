@@ -12,32 +12,41 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/174jupio-yaY3ckuh6ca6I3UP0DA
 
 st.set_page_config(page_title="雲端記帳簿", layout="centered", page_icon="☁️")
 
+# --- 定義支出與收入的選項 (已更新為您指定的項目) ---
+EXPENSE_CATS = [
+    "飲食", "交通", "購物", "娛樂", "水費", "電費", "瓦斯費", 
+    "勞保費", "健保費", "電話費", "停車管理費", "油錢", 
+    "醫療", "保險", "人情", "教育", "保養品", "房租費", 
+    "汽機車保養維修", "稅金", "捐款", "其他"
+]
+INCOME_CATS = ["薪資", "獎金", "投資", "兼職", "租金", "股息", "退稅", "其他"]
+
 # --- CSS 樣式注入：Gemini 選單風格 (淡藍底 + 深藍字) ---
 st.markdown("""
     <style>
-    /* 1. 整體背景 */
+    /* 整體背景 */
     .stApp { background-color: #F0F4F9; }
     
-    /* 2. 標題與一般文字 */
+    /* 字體顏色與大小優化 */
     h1, h2, h3, .stMarkdown h3 {
         color: #1F1F1F !important;
         font-family: "Microsoft JhengHei", sans-serif;
         font-weight: 700 !important;
     }
-    p, .stMarkdown p, .stMarkdown li, div {
+    p, .stMarkdown p, div, label {
         color: #444746 !important;
         font-size: 1.3rem !important;
         font-weight: 500;
     }
     
-    /* 3. 輸入框標籤 */
+    /* 輸入框標籤 */
     .stSelectbox label, .stDateInput label, .stNumberInput label, .stTextInput label, .stRadio label {
         font-size: 1.4rem !important;
         color: #444746 !important;
         font-weight: 700 !important;
     }
     
-    /* 4. 按鈕：Gemini 風格 */
+    /* 按鈕：Gemini 風格 */
     div.stButton > button {
         background-color: #D3E3FD;
         color: #0B57D0 !important;
@@ -46,16 +55,14 @@ st.markdown("""
         font-size: 20px !important;
         font-weight: 800;
         border: none;
-        box-shadow: none;
         transition: all 0.2s;
     }
     div.stButton > button:hover {
         background-color: #C2E7FF;
         color: #004A77 !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
-    /* 5. 分頁籤風格 */
+    /* 分頁籤風格 */
     .stTabs [data-baseweb="tab-list"] { gap: 8px; background-color: #F0F4F9; }
     .stTabs [data-baseweb="tab"] {
         height: 60px;
@@ -71,7 +78,7 @@ st.markdown("""
     }
     .stTabs [aria-selected="true"] p { color: #0B57D0 !important; }
     
-    /* 6. 指標數字 */
+    /* 指標數字 */
     div[data-testid="stMetricValue"] {
         font-size: 2.2rem !important;
         color: #0B57D0 !important;
@@ -79,7 +86,7 @@ st.markdown("""
     }
     div[data-testid="stMetricLabel"] { color: #444746 !important; }
     
-    /* 7. 表格優化 */
+    /* 表格背景 */
     [data-testid="stDataFrame"] {
         background-color: white;
         border-radius: 12px;
@@ -127,10 +134,6 @@ def update_sheet_data(df):
         df["日期"] = pd.to_datetime(df["日期"]).dt.strftime("%Y-%m-%d")
     data_to_write = [df.columns.values.tolist()] + df.values.tolist()
     sheet.update(data_to_write)
-
-# --- 定義支出與收入的選項 (方便統一修改) ---
-EXPENSE_CATS = ["飲食", "交通", "購物", "娛樂", "水費", "電費","瓦斯費","勞保費","健保費","電話費","停車管理費","油錢","醫療", "保險", "人情", "教育", "保養品", "房租費", "汽機車保養維修", "稅金", "捐款", "其他"]
-INCOME_CATS = ["薪資", "獎金", "投資", "兼職", "租金", "股息", "退稅", "投資獲利", "其他"]
 
 # --- 3. 介面設計 ---
 st.markdown("# ☁️ 雲端記帳簿")
@@ -267,6 +270,9 @@ with tab3:
         cols = cols[-1:] + cols[:-1]
         df_to_edit = df_to_edit[cols]
 
+        # 這裡會自動合併所有類別，確保下拉選單有東西選
+        all_categories = sorted(list(set(EXPENSE_CATS + INCOME_CATS)))
+
         edited_df = st.data_editor(
             df_to_edit,
             num_rows="dynamic",
@@ -275,8 +281,7 @@ with tab3:
                 "刪除": st.column_config.CheckboxColumn("刪除", width="small"),
                 "日期": st.column_config.DateColumn("日期", format="YYYY-MM-DD", width="small"), 
                 "類型": st.column_config.SelectboxColumn("類型", options=["支出", "收入"], width="small"),
-                # ✅ 這裡已更新：合併了所有的類別，讓您修改時也能選到新分類
-                "類別": st.column_config.SelectboxColumn("類別", options=list(set(EXPENSE_CATS + INCOME_CATS)), width="small"),
+                "類別": st.column_config.SelectboxColumn("類別", options=all_categories, width="small"),
                 "金額": st.column_config.NumberColumn("金額", format="NT$%d", width="small"),
                 "備註": st.column_config.TextColumn("備註", width="medium"),
             }
@@ -289,4 +294,3 @@ with tab3:
                 update_sheet_data(final_df)
             st.success("完成！")
             st.rerun()
-```
