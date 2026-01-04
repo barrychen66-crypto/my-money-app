@@ -21,7 +21,7 @@ EXPENSE_CATS = [
 ]
 INCOME_CATS = ["薪資", "獎金", "投資", "兼職", "租金", "股息", "退稅", "其他"]
 
-# --- CSS 樣式注入：Gemini 風格 + 強力深色模式修正 ---
+# --- CSS 樣式注入：Gemini 風格 + 深色模式終極修正 ---
 st.markdown("""
     <style>
     /* 1. 整體背景固定為淺色 */
@@ -93,44 +93,57 @@ st.markdown("""
         padding: 10px;
     }
 
-    /* --- 8. 【強力修正】下拉選單與深色模式 --- */
+    /* --- 8. 【深色模式終極修正】針對 iPhone/Safari 強制白底黑字 --- */
     
-    /* 強制下拉選單容器背景為白色 */
+    /* 下拉選單未展開時的框框 */
     div[data-baseweb="select"] > div {
         background-color: #FFFFFF !important;
         color: #000000 !important;
         border: 1px solid #CCCCCC !important;
     }
-    
-    /* 下拉選單彈出層 (Popover) 背景 */
-    div[data-baseweb="popover"] {
-        background-color: #FFFFFF !important;
+
+    /* 下拉選單內的文字 (未展開) */
+    div[data-baseweb="select"] div {
+        color: #000000 !important;
     }
     
-    /* 選單列表 (Menu) 背景 */
+    /* 下拉選單右邊的箭頭圖示 (強制變深色) */
+    div[data-baseweb="select"] svg {
+        fill: #444746 !important;
+        color: #444746 !important;
+    }
+    
+    /* 展開後的選單容器 (Popover) */
+    div[data-baseweb="popover"], div[data-baseweb="menu"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid #E0E0E0 !important;
+    }
+    
+    /* 選單列表 (Menu) */
     ul[data-baseweb="menu"] {
         background-color: #FFFFFF !important;
     }
     
-    /* 選項 (Option) 文字顏色 - 強制黑色 */
+    /* 選項 (Option) - 強制黑字白底 */
     li[data-baseweb="option"] {
         color: #000000 !important;
         background-color: #FFFFFF !important;
     }
     
-    /* 選項文字內容 */
-    div[data-baseweb="select"] span {
+    /* 選項內的文字 span */
+    li[data-baseweb="option"] span {
         color: #000000 !important;
+    }
+    
+    /* 當選項被選中 (Selected) 或滑鼠移過 (Hover) */
+    li[data-baseweb="option"][aria-selected="true"],
+    li[data-baseweb="option"]:hover {
+        background-color: #D3E3FD !important; /* 淡藍底 */
+        color: #0B57D0 !important; /* 深藍字 */
     }
     
     /* 輸入框 (數字、文字) 背景 */
     input {
-        background-color: #FFFFFF !important;
-        color: #000000 !important;
-    }
-    
-    /* 修正手機上的原生選單背景 (如果有的話) */
-    select {
         background-color: #FFFFFF !important;
         color: #000000 !important;
     }
@@ -196,7 +209,6 @@ with tab1:
         with c2:
             type_input = st.radio("類型", ["支出", "收入"], horizontal=True)
         
-        # 根據類型顯示對應的選項
         if type_input == "支出":
             cat_options = EXPENSE_CATS
         else:
@@ -297,7 +309,7 @@ with tab2:
                 )
 
 # ==========================
-# 分頁 3: 資料管理 (新增全選功能 + 修復版)
+# 分頁 3: 資料管理 (全選功能 + 修復版)
 # ==========================
 with tab3:
     st.markdown("### 📝 修改與刪除")
@@ -312,7 +324,7 @@ with tab3:
         if 'editor_key' not in st.session_state:
             st.session_state.editor_key = 0
 
-        # 全選與取消全選按鈕 (Streamlit 限制：必須使用按鈕來觸發全選)
+        # 全選與取消全選按鈕
         col_btn1, col_btn2 = st.columns([1, 2])
         with col_btn1:
             if st.button("☑️ 全選刪除", use_container_width=True):
@@ -335,13 +347,13 @@ with tab3:
 
         all_categories = sorted(list(set(EXPENSE_CATS + INCOME_CATS)))
 
-        # 加入 hide_index=True 隱藏最左邊無用的索引欄 (0, 1, 2...)
+        # 加入 hide_index=True 隱藏最左邊無用的索引欄
         edited_df = st.data_editor(
             df_to_edit,
             key=f"editor_{st.session_state.editor_key}",
             num_rows="dynamic",
             use_container_width=True,
-            hide_index=True,  # ★ 這裡隱藏了最左邊的索引列 ★
+            hide_index=True,  
             column_config={
                 "刪除": st.column_config.CheckboxColumn("刪除", width="small"),
                 "日期": st.column_config.DateColumn("日期", format="YYYY-MM-DD", width="small"), 
