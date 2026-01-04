@@ -12,14 +12,14 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/174jupio-yaY3ckuh6ca6I3UP0DA
 
 st.set_page_config(page_title="雲端記帳簿", layout="centered", page_icon="☁️")
 
-# --- 定義支出與收入的選項 (已更新為您指定的項目) ---
+# --- 定義支出與收入的選項 ---
 EXPENSE_CATS = [
     "飲食", "交通", "購物", "娛樂", "水費", "電費", "瓦斯費", 
     "勞保費", "健保費", "電話費", "停車管理費", "油錢", 
     "醫療", "保險", "人情", "教育", "保養品", "房租費", 
     "汽機車保養維修", "稅金", "捐款", "其他"
 ]
-INCOME_CATS = ["薪資", "獎金", "投資", "兼職", "租金", "股息", "退稅", "其他"]
+INCOME_CATS = ["薪資", "獎金", "美股", "台股", "基金", "退稅", "其他"]
 
 # --- CSS 樣式注入：Gemini 選單風格 (淡藍底 + 深藍字) ---
 st.markdown("""
@@ -154,7 +154,6 @@ with tab1:
         with c2:
             type_input = st.radio("類型", ["支出", "收入"], horizontal=True)
         
-        # 根據類型顯示對應的選項
         if type_input == "支出":
             cat_options = EXPENSE_CATS
         else:
@@ -255,7 +254,7 @@ with tab2:
                 )
 
 # ==========================
-# 分頁 3: 資料管理 (手機版面瘦身)
+# 分頁 3: 資料管理 (新增全選功能)
 # ==========================
 with tab3:
     st.markdown("### 📝 修改與刪除")
@@ -264,17 +263,39 @@ with tab3:
     else:
         st.info("勾選框框刪除，點擊內容修改。")
         
+        # 初始化 Session State 來控制全選狀態
+        if 'select_all' not in st.session_state:
+            st.session_state.select_all = False
+        if 'editor_key' not in st.session_state:
+            st.session_state.editor_key = 0
+
+        # 全選與取消全選按鈕
+        col_btn1, col_btn2 = st.columns([1, 2])
+        with col_btn1:
+            if st.button("☑️ 全選刪除", use_container_width=True):
+                st.session_state.select_all = True
+                st.session_state.editor_key += 1 # 強制刷新表格
+                st.rerun()
+        with col_btn2:
+            if st.button("⬜ 取消全選", use_container_width=True):
+                st.session_state.select_all = False
+                st.session_state.editor_key += 1 # 強制刷新表格
+                st.rerun()
+
         df_to_edit = df.copy()
-        df_to_edit["刪除"] = False
+        # 根據按鈕狀態設定「刪除」欄位的預設值
+        df_to_edit["刪除"] = st.session_state.select_all
+        
         cols = df_to_edit.columns.tolist()
         cols = cols[-1:] + cols[:-1]
         df_to_edit = df_to_edit[cols]
 
-        # 這裡會自動合併所有類別，確保下拉選單有東西選
         all_categories = sorted(list(set(EXPENSE_CATS + INCOME_CATS)))
 
+        # 加入 key 參數，讓按鈕可以強制重置表格
         edited_df = st.data_editor(
             df_to_edit,
+            key=f"editor_{st.session_state.editor_key}",
             num_rows="dynamic",
             use_container_width=True,
             column_config={
