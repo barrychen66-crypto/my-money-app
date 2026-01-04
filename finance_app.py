@@ -128,6 +128,10 @@ def update_sheet_data(df):
     data_to_write = [df.columns.values.tolist()] + df.values.tolist()
     sheet.update(data_to_write)
 
+# --- 定義支出與收入的選項 (方便統一修改) ---
+EXPENSE_CATS = ["飲食", "交通", "購物", "娛樂", "水費", "電費","瓦斯費","勞保費","健保費","電話費","停車管理費","油錢","醫療", "保險", "人情", "教育", "保養品", "房租費", "汽機車保養維修", "稅金", "捐款", "其他"]
+INCOME_CATS = ["薪資", "獎金", "投資", "兼職", "租金", "股息", "退稅", "投資獲利", "其他"]
+
 # --- 3. 介面設計 ---
 st.markdown("# ☁️ 雲端記帳簿")
 
@@ -147,11 +151,11 @@ with tab1:
         with c2:
             type_input = st.radio("類型", ["支出", "收入"], horizontal=True)
         
-        # 這裡就是容易出錯的地方，請確保複製完整
+        # 根據類型顯示對應的選項
         if type_input == "支出":
-            cat_options = ["飲食", "交通", "購物", "娛樂", "居家", "醫療", "保險", "人情", "其他"]
+            cat_options = EXPENSE_CATS
         else:
-            cat_options = ["薪資", "獎金", "投資", "兼職", "租金", "其他"]
+            cat_options = INCOME_CATS
             
         category_input = st.selectbox("分類", cat_options)
         
@@ -269,9 +273,10 @@ with tab3:
             use_container_width=True,
             column_config={
                 "刪除": st.column_config.CheckboxColumn("刪除", width="small"),
-                "日期": st.column_config.DateColumn("日期", format="YYYY-MM-DD", width="small"),
+                "日期": st.column_config.DateColumn("日期", format="YYYY-MM-DD", width="small"), 
                 "類型": st.column_config.SelectboxColumn("類型", options=["支出", "收入"], width="small"),
-                "類別": st.column_config.SelectboxColumn("類別", options=["飲食", "交通", "購物", "娛樂", "薪資", "其他"], width="small"),
+                # ✅ 這裡已更新：合併了所有的類別，讓您修改時也能選到新分類
+                "類別": st.column_config.SelectboxColumn("類別", options=list(set(EXPENSE_CATS + INCOME_CATS)), width="small"),
                 "金額": st.column_config.NumberColumn("金額", format="NT$%d", width="small"),
                 "備註": st.column_config.TextColumn("備註", width="medium"),
             }
@@ -284,3 +289,10 @@ with tab3:
                 update_sheet_data(final_df)
             st.success("完成！")
             st.rerun()
+```
+
+### 💡 如何自己修改類別？
+以後如果您還想加新的，不需要每次都問我，只要在程式碼裡找到這一行（大約在第 155 行）：
+
+```python
+EXPENSE_CATS = ["飲食", "交通", "購物", "娛樂", "居家", "醫療", "保險", "人情", "教育", "美容", "寵物", "稅金", "捐款", "其他"]
