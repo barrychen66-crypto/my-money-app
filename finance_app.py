@@ -12,7 +12,7 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/174jupio-yaY3ckuh6ca6I3UP0DA
 
 st.set_page_config(page_title="雲端記帳簿", layout="centered", page_icon="☁️")
 
-# --- 定義支出與收入的選項 (已確認為最新清單) ---
+# --- 定義支出與收入的選項 ---
 EXPENSE_CATS = [
     "飲食", "交通", "購物", "娛樂", "水費", "電費", "瓦斯費", 
     "勞保費", "健保費", "電話費", "停車管理費", "油錢", 
@@ -21,9 +21,14 @@ EXPENSE_CATS = [
 ]
 INCOME_CATS = ["薪資", "獎金", "投資", "兼職", "租金", "股息", "退稅", "其他"]
 
-# --- CSS 樣式注入：Gemini 風格 + 深色模式終極修正 ---
+# --- CSS 樣式注入：Gemini 風格 + 強制淺色模式 ---
 st.markdown("""
     <style>
+    /* 0. 【核彈級修正】強制瀏覽器使用淺色模式渲染 (解決 iPhone 深色模式問題) */
+    :root {
+        color-scheme: light;
+    }
+    
     /* 1. 整體背景固定為淺色 */
     .stApp { background-color: #F0F4F9 !important; }
     
@@ -93,7 +98,7 @@ st.markdown("""
         padding: 10px;
     }
 
-    /* --- 8. 【深色模式終極修正】針對 iPhone/Safari 強制白底黑字 --- */
+    /* --- 8. 下拉選單強力白底修正 --- */
     
     /* 下拉選單未展開時的框框 */
     div[data-baseweb="select"] > div {
@@ -102,44 +107,20 @@ st.markdown("""
         border: 1px solid #CCCCCC !important;
     }
 
-    /* 下拉選單內的文字 (未展開) */
+    /* 下拉選單內的文字 */
     div[data-baseweb="select"] div {
         color: #000000 !important;
-    }
-    
-    /* 下拉選單右邊的箭頭圖示 (強制變深色) */
-    div[data-baseweb="select"] svg {
-        fill: #444746 !important;
-        color: #444746 !important;
     }
     
     /* 展開後的選單容器 (Popover) */
     div[data-baseweb="popover"], div[data-baseweb="menu"] {
         background-color: #FFFFFF !important;
-        border: 1px solid #E0E0E0 !important;
     }
     
-    /* 選單列表 (Menu) */
-    ul[data-baseweb="menu"] {
-        background-color: #FFFFFF !important;
-    }
-    
-    /* 選項 (Option) - 強制黑字白底 */
+    /* 選項 (Option) */
     li[data-baseweb="option"] {
         color: #000000 !important;
         background-color: #FFFFFF !important;
-    }
-    
-    /* 選項內的文字 span */
-    li[data-baseweb="option"] span {
-        color: #000000 !important;
-    }
-    
-    /* 當選項被選中 (Selected) 或滑鼠移過 (Hover) */
-    li[data-baseweb="option"][aria-selected="true"],
-    li[data-baseweb="option"]:hover {
-        background-color: #D3E3FD !important; /* 淡藍底 */
-        color: #0B57D0 !important; /* 深藍字 */
     }
     
     /* 輸入框 (數字、文字) 背景 */
@@ -340,14 +321,13 @@ with tab3:
         df_to_edit = df.copy()
         df_to_edit["刪除"] = st.session_state.select_all
         
-        # 移動欄位順序
         cols = df_to_edit.columns.tolist()
         cols = cols[-1:] + cols[:-1]
         df_to_edit = df_to_edit[cols]
 
         all_categories = sorted(list(set(EXPENSE_CATS + INCOME_CATS)))
 
-        # 加入 hide_index=True 隱藏最左邊無用的索引欄
+        # 加入 hide_index=True
         edited_df = st.data_editor(
             df_to_edit,
             key=f"editor_{st.session_state.editor_key}",
